@@ -9,7 +9,7 @@ RUN apt-get update && \
 ARG GITHUB_TOKEN
 ENV GITHUB_TOKEN=$GITHUB_TOKEN
 
-RUN pip install --no-cache-dir --root-user-action ignore git+https://${GITHUB_TOKEN}@github.com/astralien3000/mybackend.git@master#egg=backend
+RUN pip install --no-cache-dir --root-user-action ignore git+https://${GITHUB_TOKEN}@github.com/astralien3000/mybackend.git@master#egg=mybackend
 
 EXPOSE 80
 
