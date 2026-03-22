@@ -4,9 +4,19 @@ from starlette.config import Config
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
 
+import os
+
 app = FastAPI()
 
-app.add_middleware(SessionMiddleware, secret_key="LLOLLLLMOIEW")
+SESSION_KEY = os.environ["SESSION_KEY"]
+
+OAUTH2_CLIENT_ID = os.environ["OAUTH2_CLIENT_ID"]
+OAUTH2_CLIENT_SECRET = os.environ["OAUTH2_CLIENT_SECRET"]
+
+AUTHENTIK_URL = os.environ["AUTHENTIK_URL"]
+AUTHENTIK_APP = os.environ["AUTHENTIK_APP"]
+
+app.add_middleware(SessionMiddleware, secret_key=SESSION_KEY)
 
 # Configuration OAuth
 config = Config()
@@ -15,17 +25,17 @@ oauth = OAuth(config)
 # Configure Authentik comme fournisseur OAuth
 oauth.register(
   name='authentik',
-  client_id='UEPfa2K3rUacTcBr1hpSCjWwZMbG2z4xMogb6nyZ',
-  client_secret='DoS5kLU8YY6f9umrFlh8L8HTErSG2YeWz2MjlTIE26aCFJfD6DfVKT3507Y4JWTybFf0YJEFLPktUS2wBGHFaNWnAHNdrYosTZT7UpA1Anai0f1kbkOurumpFHlWwyaP',
-  authorize_url='https://authentik.dauphin.ovh/application/o/authorize/',
+  client_id=OAUTH2_CLIENT_ID,
+  client_secret=OAUTH2_CLIENT_SECRET,
+  authorize_url=f'{AUTHENTIK_URL}/application/o/authorize/',
   authorize_params=None,
-  access_token_url='https://authentik.dauphin.ovh/application/o/token/',
+  access_token_url=f'{AUTHENTIK_URL}/application/o/token/',
   refresh_token_url=None,
   client_kwargs=dict(
     scope='openid profile email',
     verify=False,
   ),
-  server_metadata_url='https://authentik.dauphin.ovh/application/o/test-app/.well-known/openid-configuration',
+  server_metadata_url=f'{AUTHENTIK_URL}/application/o/{AUTHENTIK_APP}/.well-known/openid-configuration',
 )
 
 @app.get('/login')
