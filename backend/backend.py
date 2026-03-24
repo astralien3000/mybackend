@@ -98,15 +98,15 @@ async def get_me(user: dict = Depends(user)):
 
 import alterserv
 
-ovh = alterserv.OVHApi()
+ovh = alterserv.OVHApi.build()
 
-[cloud] = ovh.cloud.ls()
+[project] = ovh.cloud.project.ls()
 
-for meta in cloud.provider.ls():
+for meta in project.provider.ls():
   @app.get(f"/{'/'.join(meta.path.split('.'))}")
   def get_resource(meta=meta, user: dict = Depends(user)):
     return [
-      str(res)
+      res.config.to_dict()
       for res in meta.provider.ls()
     ]
   
