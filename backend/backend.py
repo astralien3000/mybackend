@@ -102,11 +102,71 @@ ovh = alterserv.OVHApi.build()
 
 [project] = ovh.cloud.project.ls()
 
-for meta in project.provider.ls():
-  @app.get(f"/{'/'.join(meta.path.split('.'))}")
+
+from alterserv.core import *
+from types import SimpleNamespace
+
+class ObjectVisitor:
+  def __init__(self, obj, path=[], parents=[]):
+    self.obj = obj
+    self.path = path
+    self.parents = parents
+
+  @property
+  def children_parents(self):
+    return [
+      *self.parents,
+      self.obj.__class__.__name__,
+    ]
+
+  @property
+  def children(self):
+    if self.obj.__class__.__name__ in self.parents:
+      return []
+    else:
+      ret = []
+      if isinstance(self.obj, Resource):
+        ret = ret + [
+          self.__class__(getattr(self.obj, field.name), [*self.path, field.name], self.children_parents)
+          for field in self.obj.__fields__.values()
+        ]
+        if isinstance(self.obj, Provider):
+          ret = ret + [
+            self.__class__(self.obj.Resource, [*self.path, "provide"], self.children_parents)
+          ]
+        return ret
+      elif isinstance(self.obj, Atomic):
+        return []
+      elif type(self.obj).__name__ in ["str", "int", "list", "dict", "type"]: # TODO remove
+        return []
+      else:
+        raise TypeError(f"{self.obj.__class__.__name__} not expected to be visited")
+
+
+class MyVisitor(ObjectVisitor):
+  def visit_Resource(self):
+    ret = []
+    if isinstance(self.obj, alterserv.Resource):
+      print("Resource", self.path, self.obj)
+    if isinstance(self.obj, alterserv.Provider):
+      print("Provider", self.path, self.obj)
+      ret.append(SimpleNamespace(
+        path=self.path,
+        provider=self.obj,
+      ))
+    return ret
+
+  def ls(self):
+    ret = []
+    ret = ret + self.visit_Resource()
+    for child in self.children:
+      ret = ret + child.ls()
+    return ret
+
+for meta in MyVisitor(project).ls():
+  @app.get('/'.join(["", *meta.path]))
   def get_resource(meta=meta, user: dict = Depends(user)):
     return [
       res.config.to_dict()
       for res in meta.provider.ls()
     ]
-  
